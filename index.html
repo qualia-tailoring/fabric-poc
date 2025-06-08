@@ -1,0 +1,38 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>織り判別ミニアプリ</title>
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+</head>
+<body>
+  <h2>生地について質問します</h2>
+  <form id="questionForm">
+    <p>Q1: 光沢がありますか？</p>
+    <button type="button" onclick="submitAnswer('gloss', 'high')">はい</button>
+    <button type="button" onclick="submitAnswer('gloss', 'low')">いいえ</button>
+  </form>
+
+  <p id="result"></p>
+
+  <script>
+    const answers = {};
+    function submitAnswer(key, value) {
+      answers[key] = value;
+      if (Object.keys(answers).length === 1) {
+        fetch("/api/infer", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(answers)
+        })
+        .then(res => res.json())
+        .then(data => {
+          document.getElementById("result").textContent = `あなたの織り方は「${data.result}」かもしれません`;
+        });
+      }
+    }
+
+    liff.init({ liffId: "YOUR_LIFF_ID" });
+  </script>
+</body>
+</html>
