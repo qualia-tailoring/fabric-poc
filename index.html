@@ -1,28 +1,41 @@
-
 <!DOCTYPE html>
 <html>
 <head>
   <title>織り判別ミニアプリ</title>
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-</head>
-<body>
-  <h2>生地について質問します</h2>
-  <form id="questionForm">
-    <p>Q1: 光沢がありますか？</p>
-    <button type="button" onclick="submitAnswer('gloss', 'high')">はい</button>
-    <button type="button" onclick="submitAnswer('gloss', 'low')">いいえ</button>
-  </form>
-
-  <p id="result"></p>
-
+   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <meta charset="UTF-8">
   <script>
-         liff.init({
-  liffId: https://miniapp.line.me/2007543263-Q11rq7rm
-  })
+    
+     liff.init({
+      liffId: https://miniapp.line.me/2007543263-Q11rq7rm
+      })
+
+    const questions = [
+      { key: 'gloss', text: '光沢がありますか？' },
+      { key: 'diagonal', text: '斜めの織り目が見えますか？' },
+      { key: 'breathable', text: '通気性はありますか？' },
+      { key: 'surface', text: '表面に凹凸がありますか？' },
+      { key: 'luxury', text: '高級感がありますか？' },
+      { key: 'stretch', text: '少し伸縮性がありますか？' }
+    ];
+
     const answers = {};
-    function submitAnswer(key, value) {
-      answers[key] = value;
-      if (Object.keys(answers).length === 1) {
+    let current = 0;
+
+    function showQuestion() {
+      const q = questions[current];
+      document.getElementById('question').textContent = q.text;
+    }
+
+    function submitAnswer(value) {
+      const q = questions[current];
+      answers[q.key] = value;
+
+      current++;
+      if (current < questions.length) {
+        showQuestion();
+      } else {
+        // 全回答が完了したらサーバーへ送信
         fetch("/api/infer", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -30,12 +43,22 @@
         })
         .then(res => res.json())
         .then(data => {
+          document.getElementById("quiz").style.display = "none";
           document.getElementById("result").textContent = `あなたの織り方は「${data.result}」かもしれません`;
         });
       }
     }
 
-    liff.init({ liffId: "YOUR_LIFF_ID" });
+    window.onload = showQuestion;
   </script>
+</head>
+<body>
+  <h2>生地診断クイズ</h2>
+  <div id="quiz">
+    <p id="question"></p>
+    <button onclick="submitAnswer('yes')">はい</button>
+    <button onclick="submitAnswer('no')">いいえ</button>
+  </div>
+  <p id="result"></p>
 </body>
 </html>
