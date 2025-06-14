@@ -2,14 +2,9 @@
 <html>
 <head>
   <title>織り判別ミニアプリ</title>
-   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <meta charset="UTF-8">
+  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
   <script>
-    
-     liff.init({
-      liffId: https://miniapp.line.me/2007543263-Q11rq7rm
-      })
-
     const questions = [
       { key: 'gloss', text: '光沢がありますか？' },
       { key: 'diagonal', text: '斜めの織り目が見えますか？' },
@@ -21,6 +16,16 @@
 
     const answers = {};
     let current = 0;
+
+    async function initializeApp() {
+      try {
+        await liff.init({ liffId: "2007543263-Q11rq7rm" });
+        showQuestion();
+      } catch (err) {
+        console.error("LIFF初期化失敗:", err);
+        document.getElementById("result").textContent = "LIFF初期化に失敗しました。";
+      }
+    }
 
     function showQuestion() {
       const q = questions[current];
@@ -35,7 +40,6 @@
       if (current < questions.length) {
         showQuestion();
       } else {
-        // 全回答が完了したらサーバーへ送信
         fetch("/api/infer", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -45,11 +49,15 @@
         .then(data => {
           document.getElementById("quiz").style.display = "none";
           document.getElementById("result").textContent = `あなたの織り方は「${data.result}」かもしれません`;
+        })
+        .catch(error => {
+          console.error("診断エラー:", error);
+          document.getElementById("result").textContent = "診断中にエラーが発生しました。";
         });
       }
     }
 
-    window.onload = showQuestion;
+    window.onload = initializeApp;
   </script>
 </head>
 <body>
