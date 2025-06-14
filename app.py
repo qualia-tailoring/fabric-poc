@@ -44,6 +44,20 @@ def infer():
 def serve_index():
     return send_from_directory(".", "index.html")
 
+
+@app.route("/api/feedback", methods=["POST"])
+def feedback():
+    data = request.json
+    expected = data.get("expected")
+    predicted = data.get("predicted")
+    answers = data.get("answers")
+
+    # フィードバックを保存（ここではファイルに保存。DBやスプレッドシートでもOK）
+    with open("feedback_log.txt", "a", encoding="utf-8") as f:
+        f.write(f"予想: {expected}, 推定: {predicted}, 回答: {answers}\n")
+
+    return jsonify({"status": "ok"})
+
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
 
