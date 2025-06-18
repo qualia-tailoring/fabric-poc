@@ -6,7 +6,7 @@ app = Flask(__name__, static_url_path='')
 CORS(app)
 
 # PostgreSQL に接続
-DATABASE_URL = os.environ.get("DATABASE_URL")
+DATABASE_URL = os.environ.get("postgresql://qualia_tailoring:9OhxaDjzZd8KgZqgWGrO17ut4xyQmqD4@dpg-d16i1bp5pdvs73fbi0gg-a/fabric_type")
 
 conn = psycopg2.connect(DATABASE_URL)
 cursor = conn.cursor()
