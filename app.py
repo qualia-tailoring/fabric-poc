@@ -1,123 +1,66 @@
-<!DOCTYPE html>
-<html>
-<head>
-  <title>織り判別ミニアプリ</title>
-  <meta charset="UTF-8">
-  <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
-  <script>
-    const questions = [
-      { key: 'gloss', text: '光沢がありますか？' },
-      { key: 'diagonal', text: '斜めの織り目が見えますか？' },
-      { key: 'breathable', text: '通気性はありますか？' },
-      { key: 'surface', text: '表面に凹凸がありますか？' },
-      { key: 'luxury', text: '高級感がありますか？' },
-      { key: 'stretch', text: '少し伸縮性がありますか？' }
-    ];
 
-    const answers = {};
-    let current = 0;
-    let diagnosisResult = "";
+from flask import Flask, request, jsonify, send_from_directory
+import os
+from flask_cors import CORS
 
-    async function initializeApp() {
-      try {
-        await liff.init({ liffId: "2007543263-Q11rq7rm" });
-        showQuestion();
-      } catch (err) {
-        console.error("LIFF初期化失敗:", err);
-        document.getElementById("result").textContent = "LIFF初期化に失敗しました。";
-      }
-    }
 
-    function showQuestion() {
-      const q = questions[current];
-      document.getElementById('question').textContent = q.text;
-    }
+app = Flask(__name__, static_url_path='')
+CORS(app)
 
-    function submitAnswer(value) {
-      const q = questions[current];
-      answers[q.key] = value;
+# マッピング定義（0 or 1 で特徴を持っているかを示す）
+FABRIC_DB = {
+    "サテン":      {"gloss": 1, "diagonal": 0, "breathable": 0, "surface": 0, "luxury": 1, "stretch": 0},
+    "ツイル（綾織）": {"gloss": 0, "diagonal": 1, "breathable": 1, "surface": 0, "luxury": 0, "stretch": 0},
+    "鹿の子":      {"gloss": 0, "diagonal": 0, "breathable": 1, "surface": 1, "luxury": 0, "stretch": 1},
+    "平織":       {"gloss": 0, "diagonal": 0, "breathable": 1, "surface": 0, "luxury": 0, "stretch": 0},
+    "ジャカード":   {"gloss": 1, "diagonal": 0, "breathable": 0, "surface": 1, "luxury": 1, "stretch": 0}
+}
 
-      current++;
-      if (current < questions.length) {
-        showQuestion();
-      } else {
-        fetch("/api/infer", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(answers)
-        })
-        .then(res => res.json())
-        .then(data => {
-          diagnosisResult = data.result;
-          document.getElementById("quiz").style.display = "none";
-          document.getElementById("result").textContent = `あなたの織り方は「${diagnosisResult}」かもしれません`;
-          document.getElementById("confirmation").style.display = "block";
-        })
-        .catch(error => {
-          console.error("診断エラー:", error);
-          document.getElementById("result").textContent = "診断中にエラーが発生しました。";
-        });
-      }
-    }
+def to_vector(answer_dict):
+    """yes/noの回答を0 or 1 に変換"""
+    return {k: 1 if v == "yes" else 0 for k, v in answer_dict.items()}
 
-    function confirmResult(value) {
-      document.getElementById("confirmation").style.display = "none";
+def similarity(vec1, vec2):
+    """単純な一致数によるスコア"""
+    return sum(1 for k in vec1 if vec1[k] == vec2.get(k, -1))
 
-      if (value === "yes") {
-        document.getElementById("result").textContent += "（ユーザーも納得しています）";
-      } else {
-        document.getElementById("feedback").style.display = "block";
-      }
-    }
+@app.route("/api/infer", methods=["POST"])
+def infer():
+    user_input = request.json
+    user_vector = to_vector(user_input)
 
-    function submitFeedback() {
-      const userText = document.getElementById("userFeedback").value;
+    # 類似度を計算
+    best_match = None
+    best_score = -1
+    for fabric, features in FABRIC_DB.items():
+        score = similarity(user_vector, features)
+        if score > best_score:
+            best_score = score
+            best_match = fabric
 
-      fetch("/api/feedback", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          expected: userText,
-          predicted: diagnosisResult,
-          answers: answers
-        })
-      })
-      .then(() => {
-        document.getElementById("feedback").innerHTML = "<p>ご意見ありがとうございます！</p>";
-      })
-      .catch(error => {
-        console.error("フィードバック送信エラー:", error);
-        document.getElementById("feedback").innerHTML = "<p>送信中にエラーが発生しました。</p>";
-      });
-    }
+    return jsonify({"result": best_match})
 
-    window.onload = initializeApp;
-  </script>
-</head>
-<body>
-  <h2>生地診断PoC</h2>
-  <label>生地のイメージをヒアリングします</label>
+@app.route("/")
+def serve_index():
+    return send_from_directory(".", "index.html")
 
-  <div id="quiz">
-    <p id="question"></p>
-    <button onclick="submitAnswer('yes')">はい</button>
-    <button onclick="submitAnswer('no')">いいえ</button>
-  </div>
 
-  <p id="result"></p>
+@app.route("/api/feedback", methods=["POST"])
+def feedback():
+    data = request.json
+    expected = data.get("expected")
+    predicted = data.get("predicted")
+    answers = data.get("answers")
 
-  <!-- 結果確認（はい・いいえ） -->
-  <div id="confirmation" style="display:none;">
-    <p>この診断結果は合っていますか？</p>
-    <button onclick="confirmResult('yes')">はい</button>
-    <button onclick="confirmResult('no')">いいえ</button>
-  </div>
+    # フィードバックを保存（ここではファイルに保存。DBやスプレッドシートでもOK）
+    with open("feedback_log.txt", "a", encoding="utf-8") as f:
+        f.write(f"予想: {expected}, 推定: {predicted}, 回答: {answers}\n")
 
-  <!-- フィードバック -->
-  <div id="feedback" style="display:none;">
-    <p>どの織り方をイメージしていましたか？</p>
-    <input type="text" id="userFeedback" placeholder="例: サテン、鹿の子など">
-    <button onclick="submitFeedback()">送信</button>
-  </div>
-</body>
-</html>
+    return jsonify({"status": "ok"})
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
+
+
+
+    
