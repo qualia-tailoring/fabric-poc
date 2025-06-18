@@ -19,13 +19,12 @@ CREATE TABLE IF NOT EXISTS feedback (
     predicted TEXT,
     answers JSONB,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-)
-""")
+    )
+    """)
 conn.commit()
-
 # --- 省略（FABRIC_DB, to_vector, similarity, infer関数など）---
 
-    @app.route("/api/feedback", methods=["POST"])
+@app.route("/api/feedback", methods=["POST"])
 def feedback():
     data = request.json
     expected = data.get("expected")       # ユーザーが正解と思ったもの
@@ -37,8 +36,5 @@ def feedback():
         (expected, predicted, json.dumps(answers))
     )
     conn.commit()
-
-    return jsonify({"status": "ok"})
-
 
     return jsonify({"status": "ok"})
