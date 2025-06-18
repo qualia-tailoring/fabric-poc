@@ -25,17 +25,20 @@ conn.commit()
 
 # --- 省略（FABRIC_DB, to_vector, similarity, infer関数など）---
 
-@app.route("/api/feedback", methods=["POST"])
+    @app.route("/api/feedback", methods=["POST"])
 def feedback():
     data = request.json
-    expected = data.get("expected")
-    predicted = data.get("predicted")
-    answers = data.get("answers")
+    expected = data.get("expected")       # ユーザーが正解と思ったもの
+    predicted = data.get("predicted")     # 推定結果
+    answers = data.get("answers")         # ユーザーのyes/no回答
 
     cursor.execute(
         "INSERT INTO feedback (expected, predicted, answers) VALUES (%s, %s, %s)",
         (expected, predicted, json.dumps(answers))
     )
     conn.commit()
+
+    return jsonify({"status": "ok"})
+
 
     return jsonify({"status": "ok"})
