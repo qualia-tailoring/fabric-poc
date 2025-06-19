@@ -19,13 +19,9 @@
     <button onclick="submitAnswer('no')">いいえ</button>
   </div>
 
-  <p id="result"></p>
+  <div id="result"></div>
 
   <div id="feedback" style="display:none;">
-    <p>診断は合っていましたか？</p>
-    <button onclick="submitFeedback(true)">はい</button>
-    <button onclick="showCorrectionInput()">いいえ</button>
-
     <div id="correction" style="display:none;">
       <p>何を想像していましたか？</p>
       <input type="text" id="expectedText" placeholder="例: ツイル（綾織）">
@@ -77,18 +73,13 @@
         .then(res => res.json())
         .then(data => {
           document.getElementById("quiz").style.display = "none";
-          document.getElementById("result").textContent = `<p>あなたの織り方は「${data.result}」かもしれません</p>
-              <p>この診断結果はイメージと合っていましたか？</p>
-              <button onclick="submitFeedback(true)">はい</button>
-              <button onclick="showCorrectionInput()">いいえ</button>
-              `;
-          // フィードバック用に保存
-          const fb = document.getElementById("feedback");
-          fb.style.display = "none";  // 二重表示しないように隠しておく
-          fb.dataset.predicted = data.result;
-        })
+          document.getElementById("result").innerHTML = `
+            <p>あなたの織り方は「${data.result}」かもしれません</p>
+            <p>この診断結果はイメージと合っていましたか？</p>
+            <button onclick="submitFeedback(true)">はい</button>
+            <button onclick="showCorrectionInput()">いいえ</button>
+          `;
 
-          // フィードバック表示
           const fb = document.getElementById("feedback");
           fb.style.display = "block";
           fb.dataset.predicted = data.result;
@@ -101,11 +92,15 @@
     }
 
     function showCorrectionInput() {
-      document.getElementById("correction").style.display = "block";
+      const fb = document.getElementById("feedback");
+      fb.style.display = "block";
+      const correction = document.getElementById("correction");
+      correction.style.display = "block";
     }
 
     function submitFeedback(isCorrect) {
-      const predicted = document.getElementById("feedback").dataset.predicted;
+      const fb = document.getElementById("feedback");
+      const predicted = fb.dataset.predicted;
       const expected = isCorrect ? predicted : document.getElementById("expectedText").value;
 
       fetch("/api/feedback", {
@@ -117,26 +112,12 @@
           answers: answers
         })
       }).then(() => {
-        document.getElementById("feedback").innerHTML = "<p>ご協力ありがとうございました！</p>";
+        fb.innerHTML = "<p>ご協力ありがとうございました！</p>";
       }).catch(err => {
-        document.getElementById("feedback").innerHTML = "<p>送信に失敗しました。</p>";
+        fb.innerHTML = "<p>送信に失敗しました。</p>";
       });
     }
 
-    function showCorrectionInput() {
-  // 「いいえ」ボタンクリックで補足入力表示
-  const fb = document.getElementById("feedback");
-  fb.style.display = "block";
-
-  // 結果のエリアに入力欄を追加（冗長な表示を避ける）
-  document.getElementById("result").innerHTML += `
-    <div id="correction" style="margin-top:10px;">
-      <p>何を想像していましたか？</p>
-      <input type="text" id="expectedText" placeholder="例: ツイル（綾織）" style="width:80%; padding:6px;">
-      <button onclick="submitFeedback(false)">送信</button>
-    </div>
-  `;
-}
     window.onload = initializeApp;
   </script>
 </body>
