@@ -16,7 +16,7 @@ conn = psycopg2.connect(
 )
 #conn = psycopg2.connect(DATABASE_URL)
 
-    cursor = conn.cursor()
+cursor = conn.cursor()
 
 # テーブルがなければ作成
 cursor.execute("""
