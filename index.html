@@ -77,7 +77,16 @@
         .then(res => res.json())
         .then(data => {
           document.getElementById("quiz").style.display = "none";
-          document.getElementById("result").textContent = `あなたの織り方は「${data.result}」かもしれません`;
+          document.getElementById("result").textContent = `<p>あなたの織り方は「${data.result}」かもしれません</p>
+              <p>この診断結果はイメージと合っていましたか？</p>
+              <button onclick="submitFeedback(true)">はい</button>
+              <button onclick="showCorrectionInput()">いいえ</button>
+              `;
+          // フィードバック用に保存
+          const fb = document.getElementById("feedback");
+          fb.style.display = "none";  // 二重表示しないように隠しておく
+          fb.dataset.predicted = data.result;
+        })
 
           // フィードバック表示
           const fb = document.getElementById("feedback");
@@ -114,6 +123,20 @@
       });
     }
 
+    function showCorrectionInput() {
+  // 「いいえ」ボタンクリックで補足入力表示
+  const fb = document.getElementById("feedback");
+  fb.style.display = "block";
+
+  // 結果のエリアに入力欄を追加（冗長な表示を避ける）
+  document.getElementById("result").innerHTML += `
+    <div id="correction" style="margin-top:10px;">
+      <p>何を想像していましたか？</p>
+      <input type="text" id="expectedText" placeholder="例: ツイル（綾織）" style="width:80%; padding:6px;">
+      <button onclick="submitFeedback(false)">送信</button>
+    </div>
+  `;
+}
     window.onload = initializeApp;
   </script>
 </body>
