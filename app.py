@@ -11,7 +11,8 @@ conn = psycopg2.connect(
     user=os.getenv("DB_USER"),
     password=os.getenv("DB_PASSWORD"),
     host=os.getenv("DB_HOST"),
-    port=os.getenv("DB_PORT")   
+    port=os.getenv("DB_PORT") ,
+    sslmode="require" 
 )
 cursor = conn.cursor()
 print("DB_HOST:", os.getenv("DB_HOST"))  # デバッグ用に一時的に出力
