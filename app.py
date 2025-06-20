@@ -6,7 +6,7 @@ app = Flask(__name__, static_url_path='')
 CORS(app)
 
 # PostgreSQL に接続
-#DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_URL = os.getenv("DATABASE_URL")
 conn = psycopg2.connect(DATABASE_URL + "?sslmode=require")  # or sslmode=disable if internal
 #conn = psycopg2.connect(
 #    dbname=os.getenv("DB_NAME"),
