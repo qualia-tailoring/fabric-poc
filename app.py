@@ -7,17 +7,12 @@ CORS(app)
 
 # PostgreSQL に接続
 DATABASE_URL = os.getenv("DATABASE_URL")
-conn = psycopg2.connect(DATABASE_URL + "?sslmode=require")  # or sslmode=disable if internal
-#conn = psycopg2.connect(
-#    dbname=os.getenv("DB_NAME"),
-#    user=os.getenv("DB_USER"),
-#    password=os.getenv("DB_PASSWORD"),
-#    host=os.getenv("DB_HOST"),
-#    port=os.getenv("DB_PORT") ,
-#    sslmode="require" 
-#)
+
+if DATABASE_URL is None:
+    raise ValueError("❌ DATABASE_URL is not set in environment variables.")
+
+conn = psycopg2.connect(DATABASE_URL + "?sslmode=require")  # SSL required by Render
 cursor = conn.cursor()
-print("DB_HOST:", os.getenv("DB_HOST"))  # デバッグ用に一時的に出力
 
 # テーブルがなければ作成
 cursor.execute("""
@@ -27,11 +22,16 @@ CREATE TABLE IF NOT EXISTS feedback (
     predicted TEXT,
     answers JSONB,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )
-    """)
+)
+""")
 conn.commit()
-# --- 省略（FABRIC_DB, to_vector, similarity, infer関数など）---
 
+# ✅ トップページルートを追加（ここがポイント！）
+@app.route("/")
+def index():
+    return "🚀 Flask app is running. Try POSTing to /api/feedback."
+
+# ユーザーフィードバックAPI
 @app.route("/api/feedback", methods=["POST"])
 def feedback():
     data = request.json
