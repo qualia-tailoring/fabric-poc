@@ -18,6 +18,9 @@ conn = psycopg2.connect(
 
 cursor = conn.cursor()
 
+print("DB_HOST:", os.getenv("DB_HOST"))  # デバッグ用に一時的に出力
+
+
 # テーブルがなければ作成
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS feedback (
