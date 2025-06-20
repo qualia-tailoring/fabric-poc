@@ -6,14 +6,16 @@ app = Flask(__name__, static_url_path='')
 CORS(app)
 
 # PostgreSQL に接続
-conn = psycopg2.connect(
-    dbname=os.getenv("DB_NAME"),
-    user=os.getenv("DB_USER"),
-    password=os.getenv("DB_PASSWORD"),
-    host=os.getenv("DB_HOST"),
-    port=os.getenv("DB_PORT") ,
-    sslmode="require" 
-)
+#DATABASE_URL = os.getenv("DATABASE_URL")
+conn = psycopg2.connect(DATABASE_URL + "?sslmode=require")  # or sslmode=disable if internal
+#conn = psycopg2.connect(
+#    dbname=os.getenv("DB_NAME"),
+#    user=os.getenv("DB_USER"),
+#    password=os.getenv("DB_PASSWORD"),
+#    host=os.getenv("DB_HOST"),
+#    port=os.getenv("DB_PORT") ,
+#    sslmode="require" 
+#)
 cursor = conn.cursor()
 print("DB_HOST:", os.getenv("DB_HOST"))  # デバッグ用に一時的に出力
 
