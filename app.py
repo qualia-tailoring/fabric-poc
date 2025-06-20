@@ -1,17 +1,16 @@
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, render_template
 import os, psycopg2, json
 from flask_cors import CORS
 
-app = Flask(__name__, static_url_path='')
+app = Flask(__name__)
 CORS(app)
 
-# PostgreSQL に接続
+# PostgreSQL 接続設定
 DATABASE_URL = os.getenv("DATABASE_URL")
-
 if DATABASE_URL is None:
     raise ValueError("❌ DATABASE_URL is not set in environment variables.")
 
-conn = psycopg2.connect(DATABASE_URL + "?sslmode=require")  # SSL required by Render
+conn = psycopg2.connect(DATABASE_URL + "?sslmode=require")
 cursor = conn.cursor()
 
 # テーブルがなければ作成
@@ -26,18 +25,18 @@ CREATE TABLE IF NOT EXISTS feedback (
 """)
 conn.commit()
 
-# ✅ トップページルートを追加（ここがポイント！）
+# ✅ index.html を返す
 @app.route("/")
 def index():
-    return "🚀 Flask app is running. Try POSTing to /api/feedback."
+    return render_template("index.html")
 
-# ユーザーフィードバックAPI
+# ✅ ユーザーフィードバック保存エンドポイント
 @app.route("/api/feedback", methods=["POST"])
 def feedback():
     data = request.json
-    expected = data.get("expected")       # ユーザーが正解と思ったもの
-    predicted = data.get("predicted")     # 推定結果
-    answers = data.get("answers")         # ユーザーのyes/no回答
+    expected = data.get("expected")
+    predicted = data.get("predicted")
+    answers = data.get("answers")
 
     cursor.execute(
         "INSERT INTO feedback (expected, predicted, answers) VALUES (%s, %s, %s)",
@@ -46,3 +45,9 @@ def feedback():
     conn.commit()
 
     return jsonify({"status": "ok"})
+
+# ✅ 推論エンドポイント（仮）
+@app.route("/api/infer", methods=["POST"])
+def infer():
+    # 仮で "ツイル（綾織）" を返すように
+    return jsonify({"result": "ツイル（綾織）"}), 200
