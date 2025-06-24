@@ -57,7 +57,8 @@ def feedback():
 
     return jsonify({"status": "ok"})
 
-# ✅ 推論エンドポイント（仮）
+# ✅ 生地DBとのマッチング推論エンドポイント
+@app.route("/api/infer", methods=["POST"])
 def infer():
     user_input = request.json
     user_vector = to_vector(user_input)
