@@ -5,6 +5,17 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)
 
+
+# マッピング定義（0 or 1 で特徴を持っているかを示す）
+FABRIC_DB = {
+    "サテン":      {"gloss": 1, "diagonal": 0, "breathable": 0, "surface": 0, "luxury": 1, "stretch": 0},
+    "ツイル（綾織）": {"gloss": 0, "diagonal": 1, "breathable": 1, "surface": 0, "luxury": 0, "stretch": 0},
+    "鹿の子":      {"gloss": 0, "diagonal": 0, "breathable": 1, "surface": 1, "luxury": 0, "stretch": 1},
+    "ブロード(平織)":       {"gloss": 0, "diagonal": 0, "breathable": 1, "surface": 0, "luxury": 0, "stretch": 0},
+    "ジャカード":   {"gloss": 1, "diagonal": 0, "breathable": 0, "surface": 1, "luxury": 1, "stretch": 0}
+}
+
+
 # PostgreSQL 接続設定
 DATABASE_URL = os.getenv("DATABASE_URL")
 if DATABASE_URL is None:
@@ -47,7 +58,17 @@ def feedback():
     return jsonify({"status": "ok"})
 
 # ✅ 推論エンドポイント（仮）
-@app.route("/api/infer", methods=["POST"])
 def infer():
-    # 仮で "ツイル（綾織）" を返すように
-    return jsonify({"result": "ツイル（綾織）"}), 200
+    user_input = request.json
+    user_vector = to_vector(user_input)
+
+    # 類似度を計算
+    best_match = None
+    best_score = -1
+    for fabric, features in FABRIC_DB.items():
+        score = similarity(user_vector, features)
+        if score > best_score:
+            best_score = score
+            best_match = fabric
+
+    return jsonify({"result": best_match})
