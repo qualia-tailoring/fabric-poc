@@ -3,15 +3,61 @@
 <head>
   <title>織り判別ミニアプリ</title>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Noto+Sans+JP">
   <style>
-    button { margin: 5px; }
-    #correction input { width: 80%; padding: 6px; }
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      margin: 0;
+      padding: 20px;
+      background-color: #fdfdfd;
+      color: #333;
+    }
+    h2 {
+      text-align: center;
+      font-size: 1.5em;
+    }
+    #quiz, #result, #feedback {
+      max-width: 500px;
+      margin: auto;
+      padding: 15px;
+    }
+    button {
+      display: block;
+      width: 100%;
+      padding: 12px;
+      margin: 8px 0;
+      font-size: 1.1em;
+      border: none;
+      border-radius: 6px;
+      background-color: #4CAF50;
+      color: white;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 10px;
+      margin-top: 8px;
+      font-size: 1em;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    @media (min-width: 600px) {
+      button {
+        max-width: 300px;
+        margin: 10px auto;
+      }
+    }
   </style>
 </head>
 <body>
   <h2>生地診断PoC</h2>
-  <p>生地のイメージをヒアリングします</p>
+  <p style="text-align:center;">生地のイメージをヒアリングします</p>
 
   <div id="quiz">
     <p id="question"></p>
@@ -29,96 +75,7 @@
     </div>
   </div>
 
-  <script>
-    const questions = [
-      { key: 'gloss', text: '光沢がありますか？' },
-      { key: 'diagonal', text: '斜めの織り目が見えますか？' },
-      { key: 'breathable', text: '通気性はありますか？' },
-      { key: 'surface', text: '表面に凹凸がありますか？' },
-      { key: 'luxury', text: '高級感がありますか？' },
-      { key: 'stretch', text: '少し伸縮性がありますか？' }
-    ];
-
-    const answers = {};
-    let current = 0;
-
-    async function initializeApp() {
-      try {
-        await liff.init({ liffId: "2007543263-Q11rq7rm" });
-        showQuestion();
-      } catch (err) {
-        console.error("LIFF初期化失敗:", err);
-        document.getElementById("result").textContent = "LIFF初期化に失敗しました。";
-      }
-    }
-
-    function showQuestion() {
-      const q = questions[current];
-      document.getElementById('question').textContent = q.text;
-    }
-
-    function submitAnswer(value) {
-      const q = questions[current];
-      answers[q.key] = value;
-
-      current++;
-      if (current < questions.length) {
-        showQuestion();
-      } else {
-        fetch("/api/infer", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(answers)
-        })
-        .then(res => res.json())
-        .then(data => {
-          document.getElementById("quiz").style.display = "none";
-          document.getElementById("result").innerHTML = `
-            <p>あなたの織り方は「${data.result}」かもしれません</p>
-            <p>この診断結果はイメージと合っていましたか？</p>
-            <button onclick="submitFeedback(true)">はい</button>
-            <button onclick="showCorrectionInput()">いいえ</button>
-          `;
-
-          const fb = document.getElementById("feedback");
-          fb.style.display = "block";
-          fb.dataset.predicted = data.result;
-        })
-        .catch(error => {
-          console.error("診断エラー:", error);
-          document.getElementById("result").textContent = "診断中にエラーが発生しました。";
-        });
-      }
-    }
-
-    function showCorrectionInput() {
-      const fb = document.getElementById("feedback");
-      fb.style.display = "block";
-      const correction = document.getElementById("correction");
-      correction.style.display = "block";
-    }
-
-    function submitFeedback(isCorrect) {
-      const fb = document.getElementById("feedback");
-      const predicted = fb.dataset.predicted;
-      const expected = isCorrect ? predicted : document.getElementById("expectedText").value;
-
-      fetch("/api/feedback", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          expected: expected,
-          predicted: predicted,
-          answers: answers
-        })
-      }).then(() => {
-        fb.innerHTML = "<p>ご協力ありがとうございました！</p>";
-      }).catch(err => {
-        fb.innerHTML = "<p>送信に失敗しました。</p>";
-      });
-    }
-
-    window.onload = initializeApp;
-  </script>
+  <!-- ✅ 外部JSを読み込む -->
+  <script src="{{ url_for('static', filename='script.js') }}"></script>
 </body>
 </html>
